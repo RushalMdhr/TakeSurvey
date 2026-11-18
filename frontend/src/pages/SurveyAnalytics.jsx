@@ -40,37 +40,41 @@ function TextAnswers({ surveyId, question }) {
   const loading = result.page !== page || result.loading;
 
   return (
-    <div className="text-answer-panel">
-      {result.error && <p className="analytics-error" role="alert">{result.error}</p>}
+    <div className="mt-5">
+      {result.error && (
+        <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          {result.error}
+        </p>
+      )}
       {loading ? (
-        <p className="analytics-muted">Loading answers...</p>
+        <p className="text-sm text-[#71847b]">Loading answers...</p>
       ) : result.answers.length === 0 ? (
-        <p className="analytics-muted">No text responses yet</p>
+        <p className="text-sm text-[#71847b]">No text responses yet</p>
       ) : (
         <>
-          <div className="text-answer-list">
+          <div className="grid gap-3">
             {result.answers.map((answer) => (
-              <article className="text-answer" key={answer.responseId}>
-                <p>{answer.text}</p>
-                <time dateTime={answer.submittedAt}>
+              <article className="rounded-xl border border-mint-100 bg-mint-50/50 p-4" key={answer.responseId}>
+                <p className="mb-3 whitespace-pre-wrap text-sm text-mint-900">{answer.text}</p>
+                <time className="text-xs text-[#71847b]" dateTime={answer.submittedAt}>
                   {new Date(answer.submittedAt).toLocaleDateString()}
                 </time>
               </article>
             ))}
           </div>
           {result.totalPages > 1 && (
-            <div className="pagination">
+            <div className="mt-4 flex items-center justify-between gap-3">
               <button
-                className="secondary-button"
+                className="rounded-lg border border-mint-200 px-3 py-2 text-xs font-semibold text-mint-800 transition-colors hover:bg-mint-50 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 disabled={page <= 1 || loading}
               >
                 Previous
               </button>
-              <span>{page} / {result.totalPages}</span>
+              <span className="text-xs text-[#71847b]">{page} / {result.totalPages}</span>
               <button
-                className="secondary-button"
+                className="rounded-lg border border-mint-200 px-3 py-2 text-xs font-semibold text-mint-800 transition-colors hover:bg-mint-50 disabled:cursor-not-allowed disabled:opacity-50"
                 type="button"
                 onClick={() => setPage((current) => Math.min(result.totalPages, current + 1))}
                 disabled={page >= result.totalPages || loading}
@@ -87,21 +91,21 @@ function TextAnswers({ surveyId, question }) {
 
 function BarChart({ distribution, labelKey }) {
   return (
-    <div className="analytics-bars">
+    <div className="grid gap-4">
       {distribution.map((item) => (
-        <div className="analytics-bar-row" key={item.optionId || item.value}>
-          <div className="analytics-bar-label">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2" key={item.optionId || item.value}>
+          <div className="col-span-2 flex items-center justify-between text-sm text-mint-700">
             <span>{item[labelKey]}</span>
-            <strong>{item.count}</strong>
+            <strong className="font-semibold">{item.count}</strong>
           </div>
           <div
-            className="analytics-bar-track"
+            className="h-2 overflow-hidden rounded-full bg-mint-100"
             role="img"
             aria-label={`${item[labelKey]}: ${item.count} responses, ${item.percentage}%`}
           >
-            <span style={{ width: `${item.percentage}%` }} />
+            <span className="block h-full rounded-full bg-mint-400" style={{ width: `${item.percentage}%` }} />
           </div>
-          <span className="analytics-percentage">{item.percentage}%</span>
+          <span className="min-w-10 text-right text-xs font-medium text-mint-600">{item.percentage}%</span>
         </div>
       ))}
     </div>
@@ -114,15 +118,19 @@ function QuestionResults({ surveyId, question }) {
     : 0;
 
   return (
-    <article className="analytics-question">
-      <header className="analytics-question-heading">
-        <div>
-          <p className="eyebrow">{question.type.replaceAll('_', ' ')}</p>
-          <h2>{question.label}</h2>
+    <article className="rounded-2xl border border-mint-100 bg-white p-5 shadow-sm sm:p-6">
+      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.13em] text-mint-600">
+            {question.type.replaceAll('_', ' ')}
+          </p>
+          <h2 className="mb-0 break-words text-lg font-semibold text-mint-900">{question.label}</h2>
         </div>
-        <div className="answer-summary">
-          <strong>{question.answeredCount}<span> / {question.shownCount}</span></strong>
-          <small>answered · {progress}%</small>
+        <div className="shrink-0 text-right">
+          <strong className="block text-lg font-semibold text-mint-800">
+            {question.answeredCount}<span className="font-normal text-[#71847b]"> / {question.shownCount}</span>
+          </strong>
+          <small className="text-xs text-[#71847b]">answered · {progress}%</small>
         </div>
       </header>
 
@@ -130,22 +138,22 @@ function QuestionResults({ surveyId, question }) {
         <TextAnswers surveyId={surveyId} question={question} />
       ) : question.type === 'rating' ? (
         <>
-          <div className="rating-average">
-            <strong>{question.average ?? '—'}</strong>
-            <span>average / 5</span>
+          <div className="mb-5 flex items-baseline gap-2">
+            <strong className="text-3xl font-bold text-mint-800">{question.average ?? '—'}</strong>
+            <span className="text-sm text-[#71847b]">average / 5</span>
           </div>
           <BarChart distribution={question.distribution} labelKey="value" />
         </>
       ) : (
         <>
           {question.type === 'multi_choice' && (
-            <p className="analytics-hint">Respondents could choose more than one</p>
+            <p className="mb-4 text-xs text-[#71847b]">Respondents could choose more than one</p>
           )}
           <BarChart distribution={question.distribution} labelKey="label" />
         </>
       )}
 
-      <footer className="analytics-question-footer">
+      <footer className="mt-5 border-t border-mint-100 pt-4 text-xs text-[#71847b]">
         {question.unansweredCount} unanswered
       </footer>
     </article>
@@ -188,45 +196,67 @@ export default function SurveyAnalytics() {
   const analytics = state.id === id ? state.analytics : null;
 
   if (loading) {
-    return <main className="page-container"><p className="quiet-state">Loading analysis...</p></main>;
+    return (
+      <main className="mx-auto max-w-6xl px-5 py-12 font-sans text-mint-900 sm:px-8">
+        <p className="py-10 text-center text-sm text-[#71847b]">Loading analysis...</p>
+      </main>
+    );
   }
 
   if (error || !analytics) {
     return (
-      <main className="page-container">
-        <p className="notice notice-error" role="alert">{error || 'Analysis unavailable.'}</p>
-        <Link className="secondary-button" to="/dashboard">Back to surveys</Link>
+      <main className="mx-auto max-w-6xl px-5 py-12 font-sans text-mint-900 sm:px-8">
+        <p className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600" role="alert">
+          {error || 'Analysis unavailable.'}
+        </p>
+        <Link className="text-sm font-semibold text-mint-700 hover:text-mint-900" to="/dashboard">
+          Back to surveys
+        </Link>
       </main>
     );
   }
 
   return (
-    <main className="page-container analytics-page">
-      <Link className="back-link" to="/dashboard">← Surveys</Link>
-      <div className="page-heading analytics-heading">
+    <main className="mx-auto max-w-6xl px-5 py-10 font-sans text-mint-900 sm:px-8 sm:py-12">
+      <Link className="mb-7 inline-flex text-sm text-mint-600 transition-colors hover:text-mint-800" to="/dashboard">
+        ← Surveys
+      </Link>
+      <div className="mb-7 flex flex-wrap items-center justify-between gap-5">
         <div>
-          <p className="eyebrow">Survey analysis</p>
-          <h1>{analytics.survey.title}</h1>
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.13em] text-mint-700">Survey analysis</p>
+          <h1 className="mb-0 text-3xl font-semibold tracking-tight text-mint-900 sm:text-4xl">{analytics.survey.title}</h1>
         </div>
-        <Link className="secondary-button" to={`/surveys/${id}/edit`}>Edit survey</Link>
+        <Link
+          className="inline-flex min-h-10 items-center rounded-xl border border-mint-200 px-4 text-sm font-semibold text-mint-800 no-underline transition-colors hover:bg-mint-50"
+          to={`/surveys/${id}/edit`}
+        >
+          Edit survey
+        </Link>
       </div>
 
-      <section className="analytics-total-card">
-        <span className="total-icon" aria-hidden="true">↗</span>
-        <div>
-          <strong>{analytics.totalResponses}</strong>
-          <span>total responses</span>
+      <section className="mb-7 flex flex-wrap items-center gap-4 rounded-2xl border border-mint-200 bg-mint-50 p-5 sm:px-6">
+        <span className="grid h-11 w-11 place-items-center rounded-xl bg-mint-200 text-lg text-mint-800" aria-hidden="true">↗</span>
+        <div className="flex items-baseline gap-2">
+          <strong className="text-2xl font-bold text-mint-800">{analytics.totalResponses}</strong>
+          <span className="text-sm text-mint-700">total responses</span>
         </div>
-        <Link className="text-button" to={`/s/${encodeURIComponent(analytics.survey.slug)}`} target="_blank">
+        <Link
+          className="ml-auto text-sm font-semibold text-mint-700 no-underline hover:text-mint-900"
+          to={`/s/${encodeURIComponent(analytics.survey.slug)}`}
+          target="_blank"
+          rel="noreferrer"
+        >
           Open public survey
         </Link>
       </section>
 
       {analytics.totalResponses === 0 && (
-        <p className="analytics-empty-notice">No responses yet. Share your survey to get started.</p>
+        <p className="mb-6 rounded-xl border border-mint-100 bg-mint-50 px-4 py-3 text-sm text-mint-700">
+          No responses yet. Share your survey to get started.
+        </p>
       )}
 
-      <section className="analytics-question-list">
+      <section className="grid gap-4">
         {analytics.questions.map((question) => (
           <QuestionResults key={question.questionId} surveyId={id} question={question} />
         ))}
