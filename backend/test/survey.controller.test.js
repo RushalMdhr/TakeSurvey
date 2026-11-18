@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import Survey from '../src/models/Survey.js';
 import Response from '../src/models/Response.js';
-import { getSurvey, listSurveys, unpublishSurvey } from '../src/controllers/survey.controller.js';
+import {
+  closeSurvey,
+  getSurvey,
+  listSurveys,
+  unpublishSurvey
+} from '../src/controllers/survey.controller.js';
 
 function createResponse() {
   return {
@@ -59,19 +64,48 @@ test('exposes whether a survey has responses', async (t) => {
   assert.equal(res.body.survey.hasResponses, true);
 });
 
-test('lists surveys with their response availability', async (t) => {
+test('lists surveys with completed response totals in status order', async (t) => {
   const surveys = [
-    { _id: 'survey-with-responses', toObject: () => ({ _id: 'survey-with-responses' }) },
-    { _id: 'survey-without-responses', toObject: () => ({ _id: 'survey-without-responses' }) }
+    {
+      _id: 'closed-survey',
+      status: 'closed',
+      updatedAt: new Date('2026-03-01T00:00:00.000Z'),
+      toObject() {
+        return { _id: this._id, status: this.status, updatedAt: this.updatedAt };
+      }
+    },
+    {
+      _id: 'published-survey',
+      status: 'published',
+      updatedAt: new Date('2026-02-01T00:00:00.000Z'),
+      toObject() {
+        return { _id: this._id, status: this.status, updatedAt: this.updatedAt };
+      }
+    },
+    {
+      _id: 'draft-survey',
+      status: 'draft',
+      updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+      toObject() {
+        return { _id: this._id, status: this.status, updatedAt: this.updatedAt };
+      }
+    }
   ];
   const originalFind = Survey.find;
-  const originalDistinct = Response.distinct;
+  const originalAggregate = Response.aggregate;
   Survey.find = () => ({ sort: async () => surveys });
-  Response.distinct = async () => ['survey-with-responses'];
+  let pipeline;
+  Response.aggregate = async (value) => {
+    pipeline = value;
+    return [
+      { _id: 'published-survey', totalResponses: 3 },
+      { _id: 'closed-survey', totalResponses: 5 }
+    ];
+  };
 
   t.after(() => {
     Survey.find = originalFind;
-    Response.distinct = originalDistinct;
+    Response.aggregate = originalAggregate;
   });
 
   const res = createResponse();
@@ -81,7 +115,10 @@ test('lists surveys with their response availability', async (t) => {
     (error) => { throw error; }
   );
 
-  assert.deepEqual(res.body.surveys.map((survey) => survey.hasResponses), [true, false]);
+  assert.deepEqual(res.body.surveys.map((survey) => survey.status), ['draft', 'published', 'closed']);
+  assert.deepEqual(res.body.surveys.map((survey) => survey.totalResponses), [0, 3, 5]);
+  assert.deepEqual(res.body.surveys.map((survey) => survey.hasResponses), [false, true, true]);
+  assert.equal(pipeline[0].$match.status, 'complete');
 });
 
 test('unpublishes a survey with no responses', async (t) => {
@@ -114,6 +151,41 @@ test('rejects unpublishing a survey that has responses', async (t) => {
 
   assert.equal(res.statusCode, 409);
   assert.match(res.body.message, /has responses/);
+  assert.equal(survey.status, 'published');
+  assert.equal(survey.saveCalled, false);
+});
+
+test('closes a published survey after it has received responses', async (t) => {
+  const survey = createSurvey();
+  stubModels(t, survey, true);
+
+  const res = createResponse();
+  await closeSurvey(
+    { params: { id: survey._id }, admin: { _id: 'admin-id' } },
+    res,
+    (error) => { throw error; }
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(survey.status, 'closed');
+  assert.equal(res.body.survey.status, 'closed');
+  assert.equal(res.body.survey.hasResponses, true);
+  assert.equal(survey.saveCalled, true);
+});
+
+test('rejects closing a survey that has no responses', async (t) => {
+  const survey = createSurvey();
+  stubModels(t, survey, false);
+
+  const res = createResponse();
+  await closeSurvey(
+    { params: { id: survey._id }, admin: { _id: 'admin-id' } },
+    res,
+    (error) => { throw error; }
+  );
+
+  assert.equal(res.statusCode, 409);
+  assert.match(res.body.message, /at least one response/i);
   assert.equal(survey.status, 'published');
   assert.equal(survey.saveCalled, false);
 });

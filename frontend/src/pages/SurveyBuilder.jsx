@@ -28,6 +28,7 @@ export default function SurveyBuilder() {
   const [notice, setNotice] = useState('');
   const [savingSurvey, setSavingSurvey] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [loadState, setLoadState] = useState({ id: null, loading: false, error: '' });
 
   useEffect(() => {
@@ -63,6 +64,8 @@ export default function SurveyBuilder() {
   const loading = Boolean(id) && (loadState.id !== id || loadState.loading);
   const loadError = loadState.id === id ? loadState.error : '';
   const published = survey?.status === 'published';
+  const closed = survey?.status === 'closed';
+  const editable = survey?.status === 'draft';
   const currentView = activeView.id === id ? activeView.view : 'build';
   const activeQuestion = useMemo(
     () => editingQuestionId && editingQuestionId !== 'new'
@@ -211,6 +214,22 @@ export default function SurveyBuilder() {
     }
   }
 
+  async function closeSurvey() {
+    if (!window.confirm('Close this survey? It will stop accepting new responses.')) return;
+    setError('');
+    setNotice('');
+    setClosing(true);
+    try {
+      const { data } = await api.post(`/surveys/${id}/close`);
+      setSurvey({ ...data.survey, hasResponses: true });
+      setNotice('Survey closed. No new responses will be accepted.');
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Could not close survey.');
+    } finally {
+      setClosing(false);
+    }
+  }
+
   function cancelDetailsEdit() {
     setTitle(survey.title);
     setDescription(survey.description || '');
@@ -252,13 +271,13 @@ export default function SurveyBuilder() {
         <header className="mb-8 flex flex-wrap items-start justify-between gap-5">
           <div className="min-w-0">
             <p className="mb-1 text-xs font-semibold uppercase tracking-[0.13em] text-mint-600">
-              {id ? (published ? 'Published survey' : 'Draft survey') : 'New survey'}
+              {id ? (closed ? 'Closed survey' : published ? 'Published survey' : 'Draft survey') : 'New survey'}
             </p>
             <div className="flex items-start gap-2">
               <h1 className="mb-0 break-words text-3xl font-bold tracking-tight text-mint-900 sm:text-4xl">
                 {id ? survey.title : 'Start a survey'}
               </h1>
-              {id && !editingDetails && (
+              {id && !closed && !editingDetails && (
                 <button
                   className="mt-1 rounded-lg p-2 text-mint-400 transition-colors hover:bg-mint-50 hover:text-mint-700"
                   type="button"
@@ -291,15 +310,16 @@ export default function SurveyBuilder() {
                   >
                     Open survey ↗
                   </a>
-                  {survey.hasResponses && (
-                    <Link
-                      className="rounded-xl border border-mint-200 bg-white px-5 py-3 text-sm font-medium text-mint-700 no-underline transition-colors hover:bg-mint-50"
-                      to={`/surveys/${id}/analytics`}
+                  {survey.hasResponses ? (
+                    <button
+                      className="rounded-xl border border-orange-200 bg-white px-5 py-3 text-sm font-medium text-orange-700 transition-colors hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      type="button"
+                      onClick={closeSurvey}
+                      disabled={closing}
                     >
-                      Analytics
-                    </Link>
-                  )}
-                  {!survey.hasResponses && (
+                      {closing ? 'Closing...' : 'Close survey'}
+                    </button>
+                  ) : (
                     <button
                       className="rounded-xl border border-mint-200 bg-white px-5 py-3 text-sm font-medium text-mint-700 transition-colors hover:bg-mint-50 disabled:cursor-not-allowed disabled:opacity-50"
                       type="button"
@@ -309,6 +329,28 @@ export default function SurveyBuilder() {
                       {unpublishing ? 'Unpublishing...' : 'Unpublish'}
                     </button>
                   )}
+                  {survey.hasResponses && (
+                    <Link
+                      className="rounded-xl border border-mint-200 bg-white px-5 py-3 text-sm font-medium text-mint-700 no-underline transition-colors hover:bg-mint-50"
+                      to={`/surveys/${id}/analytics`}
+                    >
+                      Analytics
+                    </Link>
+                  )}
+                </>
+              ) : closed ? (
+                <>
+                  {survey.hasResponses && (
+                    <Link
+                      className="rounded-xl border border-mint-200 bg-white px-5 py-3 text-sm font-medium text-mint-700 no-underline transition-colors hover:bg-mint-50"
+                      to={`/surveys/${id}/analytics`}
+                    >
+                      Analytics
+                    </Link>
+                  )}
+                  <span className="inline-flex items-center rounded-xl bg-orange-50 px-5 py-3 text-sm font-medium text-orange-800">
+                    Closed
+                  </span>
                 </>
               ) : (
                 <button
@@ -489,7 +531,7 @@ export default function SurveyBuilder() {
                             </span>
                           )}
                         </div>
-                        {!published && (
+                        {editable && (
                           <div className="flex shrink-0 items-center gap-1">
                             <button
                               className="cursor-grab rounded-lg p-1.5 text-mint-400 transition-colors hover:bg-mint-50 hover:text-mint-700 active:cursor-grabbing"
@@ -575,7 +617,7 @@ export default function SurveyBuilder() {
                   ))}
                 </div>
 
-                {editingQuestionId && !published && (
+                {editingQuestionId && editable && (
                   <QuestionEditor
                     question={questionForEditor}
                     questions={questions}
@@ -584,7 +626,7 @@ export default function SurveyBuilder() {
                   />
                 )}
 
-                {!published && (
+                {editable && (
                   <button
                     className="group mx-auto flex items-center gap-2 rounded-xl border-2 border-dashed border-mint-200 px-6 py-3 text-mint-500 transition-all hover:border-mint-400 hover:bg-mint-50 hover:text-mint-600"
                     type="button"

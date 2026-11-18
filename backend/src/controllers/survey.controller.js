@@ -44,18 +44,35 @@ async function createUniqueSlug(title) {
 export async function listSurveys(req, res, next) {
   try {
     const surveys = await Survey.find({ createdBy: req.admin._id }).sort({ updatedAt: -1 });
-    const responseSurveyIds = surveys.length
-      ? new Set((await Response.distinct('surveyId', {
-        surveyId: { $in: surveys.map((survey) => survey._id) }
-      })).map((surveyId) => surveyId.toString()))
-      : new Set();
-
-    res.json({
-      surveys: surveys.map((survey) => ({
+    const responseCounts = surveys.length
+      ? await Response.aggregate([
+        {
+          $match: {
+            surveyId: { $in: surveys.map((survey) => survey._id) },
+            status: 'complete'
+          }
+        },
+        { $group: { _id: '$surveyId', totalResponses: { $sum: 1 } } }
+      ])
+      : [];
+    const responseCountBySurveyId = new Map(
+      responseCounts.map((item) => [item._id.toString(), item.totalResponses])
+    );
+    const statusOrder = { draft: 0, published: 1, closed: 2 };
+    const surveyList = surveys.map((survey) => {
+      const totalResponses = responseCountBySurveyId.get(survey._id.toString()) || 0;
+      return {
         ...survey.toObject(),
-        hasResponses: responseSurveyIds.has(survey._id.toString())
-      }))
+        hasResponses: totalResponses > 0,
+        totalResponses
+      };
     });
+    surveyList.sort((left, right) => (
+      (statusOrder[left.status] ?? 3) - (statusOrder[right.status] ?? 3)
+      || new Date(right.updatedAt) - new Date(left.updatedAt)
+    ));
+
+    res.json({ surveys: surveyList });
   } catch (err) {
     errorResponse(err, res, next);
   }
@@ -184,6 +201,38 @@ export async function unpublishSurvey(req, res, next) {
     await survey.save();
 
     res.json({ survey });
+  } catch (err) {
+    errorResponse(err, res, next);
+  }
+}
+
+export async function closeSurvey(req, res, next) {
+  try {
+    const survey = await Survey.findOne({
+      _id: req.params.id,
+      createdBy: req.admin._id
+    });
+
+    if (!survey) {
+      return res.status(404).json({ message: 'Survey not found' });
+    }
+
+    if (survey.status !== 'published') {
+      return res.status(409).json({ message: 'Only published surveys can be closed' });
+    }
+
+    if (!(await Response.exists({ surveyId: survey._id }))) {
+      return res.status(409).json({
+        message: 'A survey must receive at least one response before it can be closed'
+      });
+    }
+
+    survey.status = 'closed';
+    await survey.save();
+
+    res.json({
+      survey: { ...survey.toObject(), hasResponses: true }
+    });
   } catch (err) {
     errorResponse(err, res, next);
   }

@@ -102,7 +102,9 @@ export default function Dashboard() {
                   {survey.title}
                 </h2>
                 <p className="mb-0 text-xs text-[#71847b]">
-                  {survey.questions.length} questions <span aria-hidden="true">·</span> Updated {new Date(survey.updatedAt).toLocaleDateString()}
+                  {survey.questions.length} questions <span aria-hidden="true">·</span>{' '}
+                  {survey.totalResponses} {survey.totalResponses === 1 ? 'response' : 'responses'} <span aria-hidden="true">·</span>{' '}
+                  Updated {new Date(survey.updatedAt).toLocaleDateString()}
                 </p>
               </Link>
               <span className={`w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  closeSurvey,
   createSurvey,
   deleteSurvey,
   getSurvey,
@@ -33,6 +34,7 @@ router.route('/:id')
 
 router.post('/:id/publish', publishSurvey);
 router.post('/:id/unpublish', unpublishSurvey);
+router.post('/:id/close', closeSurvey);
 
 router.route('/:id/questions')
   .get(listQuestions)
