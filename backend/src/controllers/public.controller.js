@@ -72,11 +72,16 @@ function validateAnswer(question, value) {
 export async function getPublicSurvey(req, res, next) {
   try {
     const survey = await Survey.findOne({
-      slug: req.params.slug,
-      status: 'published'
-    }).select('title description slug questions');
+      slug: req.params.slug
+    }).select('title description slug questions status');
 
     if (!survey) {
+      return res.status(404).json({ message: 'Survey not found or no longer available' });
+    }
+    if (survey.status === 'closed') {
+      return res.status(410).json({ message: 'This survey is closed and no longer accepting responses.' });
+    }
+    if (survey.status !== 'published') {
       return res.status(404).json({ message: 'Survey not found or no longer available' });
     }
 
@@ -117,11 +122,16 @@ export async function submitPublicResponse(req, res, next) {
 
   try {
     const survey = await Survey.findOne({
-      slug: req.params.slug,
-      status: 'published'
+      slug: req.params.slug
     });
 
     if (!survey) {
+      return res.status(404).json({ message: 'Survey not found or no longer available' });
+    }
+    if (survey.status === 'closed') {
+      return res.status(410).json({ message: 'This survey is closed and no longer accepting responses.' });
+    }
+    if (survey.status !== 'published') {
       return res.status(404).json({ message: 'Survey not found or no longer available' });
     }
 

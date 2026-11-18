@@ -35,6 +35,7 @@ export default function SurveyPublic() {
     slug: null,
     survey: null,
     error: '',
+    errorStatus: null,
     loading: true
   });
   const [answers, setAnswers] = useState({});
@@ -48,7 +49,7 @@ export default function SurveyPublic() {
     api.get(`/public/surveys/${encodeURIComponent(slug)}`)
       .then(({ data }) => {
         if (active) {
-          setSurveyState({ slug, survey: data.survey, error: '', loading: false });
+          setSurveyState({ slug, survey: data.survey, error: '', errorStatus: null, loading: false });
           setAnswers({});
           setSubmitted(false);
           setSubmitError('');
@@ -60,6 +61,7 @@ export default function SurveyPublic() {
             slug,
             survey: null,
             error: requestError.response?.data?.message || 'Unable to load this survey.',
+            errorStatus: requestError.response?.status || null,
             loading: false
           });
         }
@@ -73,6 +75,7 @@ export default function SurveyPublic() {
   const loading = surveyState.slug !== slug || surveyState.loading;
   const survey = surveyState.slug === slug ? surveyState.survey : null;
   const loadError = surveyState.slug === slug ? surveyState.error : '';
+  const loadErrorStatus = surveyState.slug === slug ? surveyState.errorStatus : null;
   const questionById = new Map((survey?.questions || []).map((question) => [
     question.questionId,
     question
@@ -139,7 +142,9 @@ export default function SurveyPublic() {
     return (
       <main className="grid min-h-screen place-items-center bg-mint-50 px-5 py-10 font-sans text-mint-900">
         <section className="w-full max-w-xl rounded-2xl border border-mint-100 bg-white p-7 text-center shadow-[0_16px_42px_rgba(29,86,62,0.08)] sm:p-10" role="alert">
-          <h1 className="mb-3 text-2xl font-bold text-mint-900">Survey unavailable</h1>
+          <h1 className="mb-3 text-2xl font-bold text-mint-900">
+            {loadErrorStatus === 410 ? 'Survey closed' : 'Survey unavailable'}
+          </h1>
           <p className="mb-0 text-sm text-[#71847b]">{loadError}</p>
         </section>
       </main>
