@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "test": "node --test test/analytics.controller.test.js test/survey.controller.test.js"
   },
   "keywords": [],
   "author": "",

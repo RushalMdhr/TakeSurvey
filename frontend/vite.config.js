@@ -8,4 +8,12 @@ export default defineConfig({
     react(),
     babel({ plugins: ['babel-plugin-react-compiler'] })
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:5000',
+        changeOrigin: true
+      }
+    }
+  }
 })

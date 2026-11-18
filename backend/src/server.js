@@ -4,6 +4,10 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
+import authRoutes from './routes/auth.routes.js'
+import analyticsRoutes from './routes/analytics.routes.js';
+import publicRoutes from './routes/public.routes.js';
+import surveyRoutes from './routes/survey.routes.js';
 
 dotenv.config();
 
@@ -16,6 +20,10 @@ app.use(morgan('dev'));
 
 // health check
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
+app.use('/api/auth', authRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/surveys', surveyRoutes);
 
 // 404
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
