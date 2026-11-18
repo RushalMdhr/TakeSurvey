@@ -44,7 +44,18 @@ async function createUniqueSlug(title) {
 export async function listSurveys(req, res, next) {
   try {
     const surveys = await Survey.find({ createdBy: req.admin._id }).sort({ updatedAt: -1 });
-    res.json({ surveys });
+    const responseSurveyIds = surveys.length
+      ? new Set((await Response.distinct('surveyId', {
+        surveyId: { $in: surveys.map((survey) => survey._id) }
+      })).map((surveyId) => surveyId.toString()))
+      : new Set();
+
+    res.json({
+      surveys: surveys.map((survey) => ({
+        ...survey.toObject(),
+        hasResponses: responseSurveyIds.has(survey._id.toString())
+      }))
+    });
   } catch (err) {
     errorResponse(err, res, next);
   }

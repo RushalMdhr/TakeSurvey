@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import Survey from '../src/models/Survey.js';
 import Response from '../src/models/Response.js';
-import { getSurvey, unpublishSurvey } from '../src/controllers/survey.controller.js';
+import { getSurvey, listSurveys, unpublishSurvey } from '../src/controllers/survey.controller.js';
 
 function createResponse() {
   return {
@@ -57,6 +57,31 @@ test('exposes whether a survey has responses', async (t) => {
   );
 
   assert.equal(res.body.survey.hasResponses, true);
+});
+
+test('lists surveys with their response availability', async (t) => {
+  const surveys = [
+    { _id: 'survey-with-responses', toObject: () => ({ _id: 'survey-with-responses' }) },
+    { _id: 'survey-without-responses', toObject: () => ({ _id: 'survey-without-responses' }) }
+  ];
+  const originalFind = Survey.find;
+  const originalDistinct = Response.distinct;
+  Survey.find = () => ({ sort: async () => surveys });
+  Response.distinct = async () => ['survey-with-responses'];
+
+  t.after(() => {
+    Survey.find = originalFind;
+    Response.distinct = originalDistinct;
+  });
+
+  const res = createResponse();
+  await listSurveys(
+    { admin: { _id: 'admin-id' } },
+    res,
+    (error) => { throw error; }
+  );
+
+  assert.deepEqual(res.body.surveys.map((survey) => survey.hasResponses), [true, false]);
 });
 
 test('unpublishes a survey with no responses', async (t) => {

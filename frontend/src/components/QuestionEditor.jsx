@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 const questionTypes = [
-  ['text', 'Short answer'],
-  ['single_choice', 'Single choice'],
-  ['multi_choice', 'Multiple choice'],
-  ['rating', 'Rating (1–5)']
+  ['text', 'Text'],
+  ['single_choice', 'Single Select'],
+  ['multi_choice', 'Multi Select'],
+  ['rating', 'Rating']
 ];
 
 const choiceTypes = new Set(['single_choice', 'multi_choice']);
@@ -89,13 +89,25 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
   }
 
   return (
-    <form className="editor-card question-form" onSubmit={submit}>
-      <div className="card-heading">
-        <h2>{question ? 'Edit question' : 'New question'}</h2>
-        <button className="icon-button" type="button" onClick={onCancel} aria-label="Close">×</button>
+    <form
+      className="space-y-5 rounded-2xl border border-mint-100 bg-white p-5 shadow-sm sm:p-6"
+      onSubmit={submit}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="mb-0 text-lg font-semibold text-mint-900">
+          {question ? 'Edit question' : 'New question'}
+        </h2>
+        <button
+          className="rounded-lg p-2 text-mint-400 transition-colors hover:bg-mint-50 hover:text-mint-700"
+          type="button"
+          onClick={onCancel}
+          aria-label="Close"
+        >
+          ×
+        </button>
       </div>
 
-      <label className="field">
+      <label className="grid gap-2 text-sm font-medium text-mint-800">
         Question
         <input
           autoFocus
@@ -103,18 +115,24 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
           value={label}
           onChange={(event) => setLabel(event.target.value)}
           placeholder="What would you like to know?"
+          className="w-full rounded-lg border border-mint-200 bg-white px-4 py-2.5 text-sm font-normal text-mint-900 placeholder:text-mint-300 focus:border-mint-400 focus:outline-none focus:ring-2 focus:ring-mint-300/40"
         />
       </label>
 
-      <div className="field-grid">
-        <label className="field">
+      <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+        <label className="grid gap-2 text-sm font-medium text-mint-800">
           Answer type
-          <select value={type} onChange={(event) => changeType(event.target.value)}>
+          <select
+            className="w-full rounded-lg border border-mint-200 bg-white px-4 py-2.5 text-sm font-normal text-mint-900 focus:border-mint-400 focus:outline-none focus:ring-2 focus:ring-mint-300/40"
+            value={type}
+            onChange={(event) => changeType(event.target.value)}
+          >
             {questionTypes.map(([value, name]) => <option value={value} key={value}>{name}</option>)}
           </select>
         </label>
-        <label className="check-field">
+        <label className="flex min-h-10 items-center gap-2 whitespace-nowrap text-sm text-mint-700">
           <input
+            className="h-4 w-4 accent-mint-500"
             type="checkbox"
             checked={required}
             onChange={(event) => setRequired(event.target.checked)}
@@ -124,12 +142,13 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
       </div>
 
       {choiceTypes.has(type) && (
-        <div className="option-editor">
-          <div className="section-label">Answer options</div>
+        <div className="grid gap-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-mint-700">Answer options</div>
           {options.map((option, index) => (
-            <div className="option-edit-row" key={option.optionId || index}>
-              <span className="option-dot" aria-hidden="true" />
+            <div className="flex items-center gap-2" key={option.optionId || index}>
+              <span className="h-4 w-4 shrink-0 rounded-full border border-mint-300" aria-hidden="true" />
               <input
+                className="w-full min-w-0 rounded-lg border border-mint-200 bg-white px-3 py-2 text-sm text-mint-900 placeholder:text-mint-300 focus:border-mint-400 focus:outline-none focus:ring-2 focus:ring-mint-300/40"
                 aria-label={`Option ${index + 1}`}
                 value={option.label}
                 maxLength="200"
@@ -137,7 +156,7 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
                 placeholder={`Option ${index + 1}`}
               />
               <button
-                className="icon-button"
+                className="rounded-lg p-2 text-mint-300 transition-colors hover:bg-red-50 hover:text-red-500"
                 type="button"
                 aria-label={`Remove option ${index + 1}`}
                 onClick={() => setOptions((current) => current.filter((_, optionIndex) => optionIndex !== index))}
@@ -146,17 +165,22 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
               </button>
             </div>
           ))}
-          <button className="text-button add-option" type="button" onClick={() => setOptions((current) => [...current, { label: '' }])}>
+          <button
+            className="justify-self-start text-sm text-mint-500 transition-colors hover:text-mint-700"
+            type="button"
+            onClick={() => setOptions((current) => [...current, { label: '' }])}
+          >
             + Add option
           </button>
         </div>
       )}
 
       {candidates.length > 0 && (
-        <div className="condition-editor">
-          <label className="field">
+        <div className="grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-mint-800">
             Show only when
             <select
+              className="w-full rounded-lg border border-mint-200 bg-white px-4 py-2.5 text-sm font-normal text-mint-900 focus:border-mint-400 focus:outline-none focus:ring-2 focus:ring-mint-300/40"
               value={dependsOnQuestionId}
               onChange={(event) => {
                 const nextQuestionId = event.target.value;
@@ -170,9 +194,13 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
             </select>
           </label>
           {dependency && (
-            <label className="field">
+            <label className="grid gap-2 text-sm font-medium text-mint-800">
               Answer is
-              <select value={dependsOnOptionId} onChange={(event) => setDependsOnOptionId(event.target.value)}>
+              <select
+                className="w-full rounded-lg border border-mint-200 bg-white px-4 py-2.5 text-sm font-normal text-mint-900 focus:border-mint-400 focus:outline-none focus:ring-2 focus:ring-mint-300/40"
+                value={dependsOnOptionId}
+                onChange={(event) => setDependsOnOptionId(event.target.value)}
+              >
                 <option value="">Choose an answer</option>
                 {dependency.options.map((option) => (
                   <option value={option.optionId} key={option.optionId}>{option.label}</option>
@@ -183,10 +211,24 @@ export default function QuestionEditor({ question, questions, onCancel, onSave }
         </div>
       )}
 
-      {error && <p className="form-error" role="alert">{error}</p>}
-      <div className="form-actions">
-        <button className="secondary-button" type="button" onClick={onCancel}>Cancel</button>
-        <button className="primary-button" type="submit" disabled={saving}>
+      {error && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="flex justify-end gap-3 pt-1">
+        <button
+          className="rounded-xl border border-mint-200 px-5 py-2.5 text-sm font-medium text-mint-700 transition-colors hover:bg-mint-50"
+          type="button"
+          onClick={onCancel}
+        >
+          Cancel
+        </button>
+        <button
+          className="rounded-xl bg-mint-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-mint-600 disabled:cursor-not-allowed disabled:opacity-50"
+          type="submit"
+          disabled={saving}
+        >
           {saving ? 'Saving...' : 'Save question'}
         </button>
       </div>
