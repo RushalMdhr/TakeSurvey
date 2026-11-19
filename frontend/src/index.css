@@ -34,3 +34,24 @@
     min-height: 100vh;
   }
 }
+
+@keyframes analytics-chart-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.analytics-chart-enter {
+  animation: analytics-chart-enter 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analytics-chart-enter {
+    animation: none;
+  }
+}
