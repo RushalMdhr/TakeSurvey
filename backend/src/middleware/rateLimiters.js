@@ -14,7 +14,7 @@ function createRateLimiter({ limit, windowMs, message, skipSuccessfulRequests = 
 }
 
 export const publicResponseRateLimiter = createRateLimiter({
-  limit: 10,
+  limit: 3,
   windowMs: fifteenMinutes,
   message: 'Too many responses from this network. Please try again later.'
 });

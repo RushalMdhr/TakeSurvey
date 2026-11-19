@@ -38,9 +38,9 @@ export default function Login() {
         to="/login"
       >
         <span className="grid h-[30px] w-[30px] place-items-center rounded-[10px] bg-mint-200 text-[19px] font-extrabold text-mint-800">
-          t
+          SF
         </span>
-        <span>takesurvey</span>
+        <span>SurveyFlow</span>
       </Link>
       <section className="w-full max-w-[420px] rounded-[18px] border border-mint-100 bg-white p-7 shadow-[0_16px_42px_rgba(29,86,62,0.08)] sm:p-[34px]">
         <p className="mb-0 text-[11px] font-bold uppercase tracking-[0.13em] text-mint-700">
